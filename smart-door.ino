@@ -20,6 +20,7 @@ WiFiClientSecure client;
 void sendTelegramMessage(String message) {
     client.setInsecure();
     if (client.connect("api.telegram.org", 443)) {
+        client.setTimeout(5000);  // Timeout set karo
         String url = "/bot" + String(TELEGRAM_BOT_TOKEN) + "/sendMessage?chat_id=" + String(CHAT_ID) + "&text=" + message;
         client.print(String("GET ") + url + " HTTP/1.1\r\n" +
                      "Host: api.telegram.org\r\n" +
@@ -53,9 +54,18 @@ void loop() {
 
     // Check if any sensor is triggered
     if (irState == LOW || vibrationState == HIGH) {
-        Serial.println("🚨 Intrusion Detected! Sending Alert...");
         digitalWrite(BUZZER, HIGH);
-        sendTelegramMessage("🚨 Intrusion Alert! Someone is detected near the area.");
+
+        if (irState == LOW) {
+            Serial.println("🚨 IR Sensor Triggered! Sending Alert...");
+            sendTelegramMessage("🚨 Alert! Motion detected by IR sensor.");
+        }
+
+        if (vibrationState == HIGH) {
+            Serial.println("🚨 Vibration Sensor Triggered! Sending Alert...");
+            sendTelegramMessage("🚨 Alert! Vibration detected, possible tampering.");
+        }
+
         delay(5000); // Buzzer duration
         digitalWrite(BUZZER, LOW);
     }
